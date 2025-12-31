@@ -107,7 +107,7 @@ if st.button("ANALİZ ET VE RAPORLA", type="primary"):
         st.pyplot(radar_ciz(kategoriler, puanlar))
         
     with col_g2:
-        yorum = f"Sayin {ad}, Ahi-AI analizine gore:\n\\n"
+        yorum = f"Sayin {ad}, Ahi-AI analizine gore:\n\n"
         if genel_ort > 8: yorum += "Tebrikler! Usta seviyesindesin.\n"
         elif genel_ort > 5: yorum += "Gelisim gostermelisin (Kalfa).\n"
         else: yorum += "Daha cok calismalisin (Yamak).\n"
@@ -128,4 +128,5 @@ if st.button("ANALİZ ET VE RAPORLA", type="primary"):
                 mime="application/pdf"
 
             )
+
 
