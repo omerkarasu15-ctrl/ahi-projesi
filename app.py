@@ -112,7 +112,7 @@ if st.button("ANALİZ ET VE RAPORLA", type="primary"):
         elif genel_ort > 5: yorum += "Gelisim gostermelisin (Kalfa).\n"
         else: yorum += "Daha cok calismalisin (Yamak).\n"
         
-        if p5 < 5: yorum += "Teknoloji konusuna egilmelisin.\\n"
+        if p5 < 5: yorum += "Teknoloji konusuna egilmelisin.\n"
         
         st.info(yorum)
         
@@ -128,3 +128,4 @@ if st.button("ANALİZ ET VE RAPORLA", type="primary"):
                 mime="application/pdf"
 
             )
+
