@@ -1,100 +1,149 @@
 import streamlit as st
 import base64
 from fpdf import FPDF
+import matplotlib.pyplot as plt
+import numpy as np
+import io
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Ahi-AI Değerlendirme v2", page_icon="⚖️")
+st.set_page_config(page_title="Ahi-AI Pro v3", page_icon="🧿")
 
-st.title("⚖️ Ahi-AI: Kriter Bazlı Değerlendirme")
-st.markdown("**Turizm ve Otelcilik - Ahilik Değerleri Davranış Göstergeleri**")
+st.title("🧿 Ahi-AI: Gelişmiş Ahilik Envanteri")
+st.markdown("**Turizm ve Otelcilik - Mesleki Değerler Analizi**")
 
-# --- SOL MENÜ: ÖĞRENCİ BİLGİLERİ ---
+# --- SOL MENÜ ---
 with st.sidebar:
-    st.header("Öğrenci Bilgileri")
+    st.header("👤 Öğrenci Kimliği")
     ad = st.text_input("Ad Soyad")
     no = st.text_input("Okul No")
-    sinif = st.selectbox("Sınıf", ["9-A", "10-B", "11-C", "12-D"])
+    sinif = st.selectbox("Sınıf", ["9-A", "10-B", "11-C", "12-D", "MESEM"])
+    st.info("Bu sistem, Ahilik kültüründeki 'Eline, Beline, Diline Sahip Ol' ilkesi temel alınarak hazırlanmıştır.")
 
-# --- FONKSİYON: SORU SOR VE PUAN HESAPLA ---
+# --- FONKSİYON: RADAR GRAFİĞİ ÇİZ ---
+def create_radar_chart(categories, values):
+    N = len(categories)
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    angles += angles[:1]
+    values += values[:1]
+    
+    fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, linewidth=1, linestyle='solid', color='red')
+    ax.fill(angles, values, 'red', alpha=0.1)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, size=8)
+    ax.set_yticks([20, 40, 60, 80, 100])
+    ax.set_yticklabels(["20", "40", "60", "80", "100"], color="grey", size=7)
+    ax.set_ylim(0, 100)
+    return fig
+
+# --- FONKSİYON: PUANLAMA ---
 def soru_sor(soru_metni):
     secim = st.radio(
         soru_metni,
-        ["Tam Gösteriyor (100p)", "Kısmen Gösteriyor (50p)", "Geliştirilmeli (0p)"],
+        ["Tam Gösteriyor (100p)", "Geliştirilmeli (50p)", "Zayıf (0p)"],
+        horizontal=True,
         key=soru_metni
     )
     if "Tam" in secim: return 100
-    elif "Kısmen" in secim: return 50
+    elif "Geliştirilmeli" in secim: return 50
     else: return 0
 
-# --- ANA FORM: DETAYLI KRİTERLER ---
+# --- ANA FORM ---
 if ad and no:
     st.markdown("---")
     
-    # 1. BÖLÜM: DÜRÜSTLÜK VE GÜVEN
-    st.subheader("1. Dürüstlük ve İş Ahlakı (El)")
+    # KATEGORİ 1: ELİNE SAHİP OL (İş Ahlakı)
+    st.subheader("1. Eline Sahip Ol (Dürüstlük & Güven)")
     p1_a = soru_sor("Hata yaptığında dürüstçe kabul edip sorumluluk alıyor mu?")
     p1_b = soru_sor("Kurumun malzemesini (demirbaş/gıda) israf etmeden kullanıyor mu?")
     p1 = (p1_a + p1_b) / 2 
 
-    st.markdown("---")
-
-    # 2. BÖLÜM: CÖMERTLİK VE HİZMET
-    st.subheader("2. Cömertlik ve Hizmet Bilinci (Sofrası Açık)")
-    p2_a = soru_sor("Bilgisini ve tecrübesini arkadaşlarıyla paylaşıyor mu?")
-    p2_b = soru_sor("Misafire/Müşteriye karşılık beklemeden güler yüzle hizmet ediyor mu?")
+    # KATEGORİ 2: DİLİNE SAHİP OL (İletişim)
+    st.subheader("2. Diline Sahip Ol (Nezaket & İletişim)")
+    p2_a = soru_sor("Müşteri ve arkadaşlarıyla konuşurken üslubuna dikkat ediyor mu?")
+    p2_b = soru_sor("Dedikodu yapmaktan ve kırıcı sözlerden kaçınıyor mu?")
     p2 = (p2_a + p2_b) / 2
 
-    st.markdown("---")
-
-    # 3. BÖLÜM: SAYGI VE HİYERARŞİ
-    st.subheader("3. Saygı ve Hiyerarşi (Usta-Çırak)")
-    p3_a = soru_sor("Usta öğreticilerine ve şeflerine karşı saygılı mı?")
-    p3_b = soru_sor("Verilen talimatları eksiksiz ve zamanında yerine getiriyor mu?")
+    # KATEGORİ 3: SOFRASI AÇIK OL (Cömertlik)
+    st.subheader("3. Sofrası Açık Ol (Hizmet & Paylaşım)")
+    p3_a = soru_sor("Bilgisini ve tecrübesini arkadaşlarıyla paylaşıyor mu?")
+    p3_b = soru_sor("Hizmet ederken karşılık beklemeden güler yüz gösteriyor mu?")
     p3 = (p3_a + p3_b) / 2
 
-    st.markdown("---")
-
-    # 4. BÖLÜM: SABIR VE SEBAT
-    st.subheader("4. Sabır ve Kriz Yönetimi")
-    p4_a = soru_sor("Yoğun iş temposunda veya zor müşteride sakinliğini koruyor mu?")
-    p4_b = soru_sor("Başladığı işi yarım bırakmadan sonuna kadar götürüyor mu?")
+    # KATEGORİ 4: SADAKAT VE SEBAT
+    st.subheader("4. Kapısı Açık Ol (Misafirperverlik & Sebat)")
+    p4_a = soru_sor("Zor müşterilere karşı sabrını koruyabiliyor mu?")
+    p4_b = soru_sor("Mesleğin zorluklarına karşı pes etmeden çalışıyor mu?")
     p4 = (p4_a + p4_b) / 2
 
     st.markdown("---")
 
-    # SONUÇ HESAPLAMA (100'lük Sistem)
+    # --- HESAPLAMA VE GÖRSELLEŞTİRME ---
     genel_ort = (p1 + p2 + p3 + p4) / 4
+    
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.metric(label="Genel Ahilik Puanı", value=f"{genel_ort:.0f}")
+        if genel_ort >= 85: st.success("🌟 USTA ADAYI")
+        elif genel_ort >= 60: st.warning("🛠️ KALFA ADAYI")
+        else: st.error("🌱 YAMAK")
 
-    # Renkli Sonuç Kutusu
-    if genel_ort >= 85: 
-        st.success(f"🏆 MÜKEMMEL - Usta Adayı (Puan: {genel_ort:.0f})")
-        sonuc_mesaji = "USTA ADAYI (Mukemmel)"
-    elif genel_ort >= 60: 
-        st.warning(f"🔨 GELİŞİYOR - Kalfa Adayı (Puan: {genel_ort:.0f})")
-        sonuc_mesaji = "KALFA ADAYI (Iyi)"
-    else: 
-        st.error(f"🌱 BAŞLANGIÇ - Yamak (Puan: {genel_ort:.0f})")
-        sonuc_mesaji = "YAMAK (Gelisim Gerekli)"
+    with col2:
+        st.write("**Gelişim Grafiği:**")
+        categories = ['Dürüstlük', 'İletişim', 'Cömertlik', 'Sebat']
+        values = [p1, p2, p3, p4]
+        fig = create_radar_chart(categories, values)
+        st.pyplot(fig)
 
-    # PDF OLUŞTURMA
-    yorum = f"Sayin {ad} ({no}), Ahi-AI Degerlendirme Sonucu:\n\n"
-    yorum += f"Genel Ahilik Puani: {genel_ort:.0f} / 100\n"
-    yorum += f"Durustluk: {p1:.0f} - Comertlik: {p2:.0f}\n"
-    yorum += f"Saygi: {p3:.0f} - Sabir: {p4:.0f}\n\n"
-    yorum += f"SONUC: {sonuc_mesaji}\n"
+    # --- AYRINTILI RAPOR OLUŞTURMA (KÜTÜPHANE) ---
+    
+    # Dinamik Tavsiyeler (Kütüphane Kısmı)
+    tavsiyeler = []
+    if p1 < 70: tavsiyeler.append("- 'Eline Sahip Ol': Malzeme israfı kul hakkıdır. Demirbaşları korumaya özen göster.")
+    if p2 < 70: tavsiyeler.append("- 'Diline Sahip Ol': Tatlı dil yılanı deliğinden çıkarır. Üslubunu yumuşatmalısın.")
+    if p3 < 70: tavsiyeler.append("- 'Sofrası Açık Ol': Bilgi paylaştıkça çoğalır. Ekip arkadaşlarına yardım et.")
+    if p4 < 70: tavsiyeler.append("- 'Sabır': Sabır acıdır ama meyvesi tatlıdır. Zorluklarda hemen pes etme.")
+    
+    if not tavsiyeler: tavsiyeler.append("- Tebrikler! Tüm Ahilik değerlerini layıkıyla taşıyorsun.")
 
-    if st.button("Sonuç Raporunu PDF İndir"):
+    tavsiye_metni = "\n".join(tavsiyeler)
+
+    yorum = f"Sayin {ad} ({no}), Mesleki Degerler Analizi:\n\n"
+    yorum += f"Genel Puan: {genel_ort:.0f} / 100\n"
+    yorum += f"--------------------------------------\n"
+    yorum += f"Durustluk (Eline Sahip): {p1:.0f}\n"
+    yorum += f"Iletisim (Diline Sahip): {p2:.0f}\n"
+    yorum += f"Comertlik (Sofrasi Acik): {p3:.0f}\n"
+    yorum += f"Sebat (Kapisi Acik): {p4:.0f}\n"
+    yorum += f"--------------------------------------\n"
+    yorum += f"GELISIM TAVSIYELERI:\n{tavsiye_metni}\n"
+
+    # PDF BUTONU
+    if st.button("📄 Detaylı Raporu İndir"):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
-        pdf.cell(200, 10, txt="AHI-AI DEGERLENDIRME RAPORU", ln=True, align='C')
-        pdf.cell(200, 10, txt="------------------------------------------------", ln=True, align='C')
+        
+        pdf.cell(200, 10, txt="AHI-AI GELISIM RAPORU", ln=True, align='C')
+        pdf.cell(200, 10, txt="OTELCILIK VE MESLEK AHLAKI", ln=True, align='C')
+        pdf.ln(10)
+        
         pdf.multi_cell(0, 10, txt=yorum)
+        
+        # Grafiği PDF'e eklemek için kaydet
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png')
+        img_buffer.seek(0)
+        
+        # PDF'e resim ekleme (Koordinatları ayarlamak gerekebilir, şimdilik basit tuttum)
+        # Not: FPDF'te resim eklemek için dosyayı sunucuya kaydetmek daha garantidir.
+        # Şimdilik sadece metin indiriyoruz, grafik ekranda kalıyor.
         
         pdf_content = pdf.output(dest='S').encode('latin-1')
         b64 = base64.b64encode(pdf_content).decode()
-        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Ahi_Rapor_{no}.pdf">📄 PDF Dosyasını İndir</a>'
+        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Ahi_Rapor_{no}.pdf">Raporu İndir</a>'
         st.markdown(href, unsafe_allow_html=True)
 
 else:
-    st.info("👈 Lütfen sol menüden öğrenci bilgilerini giriniz.")
+    st.info("👈 Analize başlamak için sol menüden öğrenci seçiniz.")
