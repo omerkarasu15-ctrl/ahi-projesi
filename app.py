@@ -6,7 +6,7 @@ import numpy as np
 import io
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Ahi-AI Pro v3", page_icon="🧿")
+st.set_page_config(page_title="Ahi-AI Pro v3.1", page_icon="🧿")
 
 st.title("🧿 Ahi-AI: Gelişmiş Ahilik Envanteri")
 st.markdown("**Turizm ve Otelcilik - Mesleki Değerler Analizi**")
@@ -52,19 +52,19 @@ def soru_sor(soru_metni):
 if ad and no:
     st.markdown("---")
     
-    # KATEGORİ 1: ELİNE SAHİP OL (İş Ahlakı)
+    # KATEGORİ 1: ELİNE SAHİP OL
     st.subheader("1. Eline Sahip Ol (Dürüstlük & Güven)")
     p1_a = soru_sor("Hata yaptığında dürüstçe kabul edip sorumluluk alıyor mu?")
     p1_b = soru_sor("Kurumun malzemesini (demirbaş/gıda) israf etmeden kullanıyor mu?")
     p1 = (p1_a + p1_b) / 2 
 
-    # KATEGORİ 2: DİLİNE SAHİP OL (İletişim)
+    # KATEGORİ 2: DİLİNE SAHİP OL
     st.subheader("2. Diline Sahip Ol (Nezaket & İletişim)")
     p2_a = soru_sor("Müşteri ve arkadaşlarıyla konuşurken üslubuna dikkat ediyor mu?")
     p2_b = soru_sor("Dedikodu yapmaktan ve kırıcı sözlerden kaçınıyor mu?")
     p2 = (p2_a + p2_b) / 2
 
-    # KATEGORİ 3: SOFRASI AÇIK OL (Cömertlik)
+    # KATEGORİ 3: SOFRASI AÇIK OL
     st.subheader("3. Sofrası Açık Ol (Hizmet & Paylaşım)")
     p3_a = soru_sor("Bilgisini ve tecrübesini arkadaşlarıyla paylaşıyor mu?")
     p3_b = soru_sor("Hizmet ederken karşılık beklemeden güler yüz gösteriyor mu?")
@@ -91,21 +91,21 @@ if ad and no:
 
     with col2:
         st.write("**Gelişim Grafiği:**")
-        categories = ['Dürüstlük', 'İletişim', 'Cömertlik', 'Sebat']
+        categories = ['Durustluk', 'Iletisim', 'Comertlik', 'Sebat']
         values = [p1, p2, p3, p4]
         fig = create_radar_chart(categories, values)
         st.pyplot(fig)
 
-    # --- AYRINTILI RAPOR OLUŞTURMA (KÜTÜPHANE) ---
+    # --- AYRINTILI RAPOR OLUŞTURMA ---
     
-    # Dinamik Tavsiyeler (Kütüphane Kısmı)
+    # Dinamik Tavsiyeler
     tavsiyeler = []
-    if p1 < 70: tavsiyeler.append("- 'Eline Sahip Ol': Malzeme israfı kul hakkıdır. Demirbaşları korumaya özen göster.")
-    if p2 < 70: tavsiyeler.append("- 'Diline Sahip Ol': Tatlı dil yılanı deliğinden çıkarır. Üslubunu yumuşatmalısın.")
-    if p3 < 70: tavsiyeler.append("- 'Sofrası Açık Ol': Bilgi paylaştıkça çoğalır. Ekip arkadaşlarına yardım et.")
-    if p4 < 70: tavsiyeler.append("- 'Sabır': Sabır acıdır ama meyvesi tatlıdır. Zorluklarda hemen pes etme.")
+    if p1 < 70: tavsiyeler.append("- 'Eline Sahip Ol': Malzeme israfi kul hakkidir. Demirbaslari korumaya ozen goster.")
+    if p2 < 70: tavsiyeler.append("- 'Diline Sahip Ol': Tatli dil yilani deliginden cikarir. Uslubunu yumusatmalisin.")
+    if p3 < 70: tavsiyeler.append("- 'Sofrasi Acik Ol': Bilgi paylastikca cogalir. Ekip arkadaslarina yardim et.")
+    if p4 < 70: tavsiyeler.append("- 'Sabir': Sabir acidir ama meyvesi tatlidir. Zorluklarda hemen pes etme.")
     
-    if not tavsiyeler: tavsiyeler.append("- Tebrikler! Tüm Ahilik değerlerini layıkıyla taşıyorsun.")
+    if not tavsiyeler: tavsiyeler.append("- Tebrikler! Tum Ahilik degerlerini layikiyla tasiyorsun.")
 
     tavsiye_metni = "\n".join(tavsiyeler)
 
@@ -119,30 +119,35 @@ if ad and no:
     yorum += f"--------------------------------------\n"
     yorum += f"GELISIM TAVSIYELERI:\n{tavsiye_metni}\n"
 
-    # PDF BUTONU
+    # PDF BUTONU VE TR KARAKTER DÜZELTME
     if st.button("📄 Detaylı Raporu İndir"):
+        
+        # Bu fonksiyon Türkçe karakterleri İngilizceye çevirir (Hata önleyici)
+        def tr_duzelt(text):
+            tr_map = {
+                'ğ':'g', 'Ğ':'G', 'ş':'s', 'Ş':'S', 'ı':'i', 'İ':'I',
+                'ü':'u', 'Ü':'U', 'ö':'o', 'Ö':'O', 'ç':'c', 'Ç':'C'
+            }
+            for tr, eng in tr_map.items():
+                text = text.replace(tr, eng)
+            return text
+
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
         
-        pdf.cell(200, 10, txt="AHI-AI GELISIM RAPORU", ln=True, align='C')
+        # Başlık ve içeriği temizleyerek yazıyoruz
+        pdf.cell(200, 10, txt=tr_duzelt("AHİ-AI GELİŞİM RAPORU"), ln=True, align='C')
         pdf.cell(200, 10, txt="OTELCILIK VE MESLEK AHLAKI", ln=True, align='C')
         pdf.ln(10)
         
-        pdf.multi_cell(0, 10, txt=yorum)
+        # Yorum metnindeki olası TR karakterleri de temizle
+        pdf.multi_cell(0, 10, txt=tr_duzelt(yorum))
         
-        # Grafiği PDF'e eklemek için kaydet
-        img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png')
-        img_buffer.seek(0)
-        
-        # PDF'e resim ekleme (Koordinatları ayarlamak gerekebilir, şimdilik basit tuttum)
-        # Not: FPDF'te resim eklemek için dosyayı sunucuya kaydetmek daha garantidir.
-        # Şimdilik sadece metin indiriyoruz, grafik ekranda kalıyor.
-        
-        pdf_content = pdf.output(dest='S').encode('latin-1')
+        # PDF Çıktısı
+        pdf_content = pdf.output(dest='S').encode('latin-1', 'replace')
         b64 = base64.b64encode(pdf_content).decode()
-        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Ahi_Rapor_{no}.pdf">Raporu İndir</a>'
+        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Ahi_Rapor_{no}.pdf">Raporu İndir (Hazır)</a>'
         st.markdown(href, unsafe_allow_html=True)
 
 else:
