@@ -1,132 +1,100 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from fpdf import FPDF
 import base64
+from fpdf import FPDF
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Project Ahi-AI", layout="centered", page_icon="🛡️")
+st.set_page_config(page_title="Ahi-AI Değerlendirme v2", page_icon="⚖️")
 
-# --- FONKSİYONLAR ---
-def temizle_pdf_icin(metin):
-    if not isinstance(metin, str): return str(metin)
-    ceviri = str.maketrans("ğĞüÜşŞıİöÖçÇ", "gGuUsSiIoOcC")
-    metin = metin.translate(ceviri)
-    # Latin-1 uyumlu hale getir
-    return metin.encode('latin-1', 'ignore').decode('latin-1')
+st.title("⚖️ Ahi-AI: Kriter Bazlı Değerlendirme")
+st.markdown("**Turizm ve Otelcilik - Ahilik Değerleri Davranış Göstergeleri**")
 
-def radar_ciz(kategoriler, puanlar):
-    puanlar_grafik = puanlar + [puanlar[0]]
-    acilar = np.linspace(0, 2 * np.pi, len(kategoriler), endpoint=False).tolist() + [0]
-    
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-    
-    # Eksen Yazıları
-    plt.xticks(acilar[:-1], kategoriler, size=10, color="black", weight='bold')
-    
-    # Y Eksen (Halkalar)
-    ax.set_rlabel_position(0)
-    plt.yticks([2,4,6,8,10], ["2","4","6","8","10"], color="grey", size=7)
-    plt.ylim(0, 10)
-    
-    # Çizim
-    ax.plot(acilar, puanlar_grafik, linewidth=2, linestyle='solid', color='#D2691E')
-    ax.fill(acilar, puanlar_grafik, '#D2691E', alpha=0.3)
-    
-    # Arkaplanı temizle
-    fig.patch.set_facecolor('white')
-    ax.set_facecolor('#fafafa')
-    
-    return fig
+# --- SOL MENÜ: ÖĞRENCİ BİLGİLERİ ---
+with st.sidebar:
+    st.header("Öğrenci Bilgileri")
+    ad = st.text_input("Ad Soyad")
+    no = st.text_input("Okul No")
+    sinif = st.selectbox("Sınıf", ["9-A", "10-B", "11-C", "12-D"])
 
-def pdf_yap(isim, yorum, fig_radar):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Başlık
-    pdf.set_font('Arial', 'B', 20)
-    pdf.set_text_color(139, 69, 19)
-    pdf.cell(0, 15, "PROJECT AHI-AI", 0, 1, 'C')
-    
-    # İsim
-    pdf.set_font('Arial', '', 12)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, f"Rapor Sahibi: {temizle_pdf_icin(isim)}", 0, 1, 'C')
-    
-    # Grafik
-    fig_radar.savefig("temp_radar.png", bbox_inches='tight')
-    pdf.image("temp_radar.png", x=60, y=40, w=90)
-    
-    # Yorum
-    pdf.set_y(140)
-    pdf.set_font('Arial', '', 10)
-    pdf.multi_cell(0, 6, temizle_pdf_icin(yorum))
-    
-    # Dosya çıktısı
-    dosya_adi = f"Rapor_{temizle_pdf_icin(isim)}.pdf"
-    pdf.output(dosya_adi)
-    return dosya_adi
+# --- FONKSİYON: SORU SOR VE PUAN HESAPLA ---
+def soru_sor(soru_metni):
+    secim = st.radio(
+        soru_metni,
+        ["Tam Gösteriyor (100p)", "Kısmen Gösteriyor (50p)", "Geliştirilmeli (0p)"],
+        key=soru_metni
+    )
+    if "Tam" in secim: return 100
+    elif "Kısmen" in secim: return 50
+    else: return 0
 
-# --- ARAYÜZ ---
-st.title("🛡️ PROJECT AHI-AI")
-st.markdown("**Geleneksel Değerler & Modern Yetkinlik Analizi**")
-st.markdown("---")
-
-# Veri Giriş Alanı
-ad = st.text_input("Öğrenci Adı Soyadı", "Örnek Öğrenci")
-
-col1, col2 = st.columns(2)
-puan_skalasi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-with col1:
-    st.subheader("📜 Ahilik Değerleri")
-    p1 = st.selectbox("Sabır", puan_skalasi, index=6)
-    p2 = st.selectbox("Cömertlik", puan_skalasi, index=7)
-    p3 = st.selectbox("Ahlak", puan_skalasi, index=8)
-    p4 = st.selectbox("Yarenlik", puan_skalasi, index=5)
-
-with col2:
-    st.subheader("💻 Teknik Beceriler")
-    p5 = st.selectbox("Dijital", puan_skalasi, index=4)
-    p6 = st.selectbox("Mantık", puan_skalasi, index=5)
-    p7 = st.selectbox("Girişim", puan_skalasi, index=3)
-
-st.markdown("---")
-
-# Buton
-if st.button("ANALİZ ET VE RAPORLA", type="primary"):
-    kategoriler = ['Sabır', 'Cömertlik', 'Ahlak', 'Yarenlik', 'Dijital', 'Mantık', 'Girişim']
-    puanlar = [p1, p2, p3, p4, p5, p6, p7]
-    genel_ort = sum(puanlar) / 7
+# --- ANA FORM: DETAYLI KRİTERLER ---
+if ad and no:
+    st.markdown("---")
     
-    st.success(f"Analiz Tamamlandı! Ortalama: {genel_ort:.1f}")
-    
-    col_g1, col_g2 = st.columns([1,1])
-    with col_g1:
-        st.pyplot(radar_ciz(kategoriler, puanlar))
+    # 1. BÖLÜM: DÜRÜSTLÜK VE GÜVEN
+    st.subheader("1. Dürüstlük ve İş Ahlakı (El)")
+    p1_a = soru_sor("Hata yaptığında dürüstçe kabul edip sorumluluk alıyor mu?")
+    p1_b = soru_sor("Kurumun malzemesini (demirbaş/gıda) israf etmeden kullanıyor mu?")
+    p1 = (p1_a + p1_b) / 2 
+
+    st.markdown("---")
+
+    # 2. BÖLÜM: CÖMERTLİK VE HİZMET
+    st.subheader("2. Cömertlik ve Hizmet Bilinci (Sofrası Açık)")
+    p2_a = soru_sor("Bilgisini ve tecrübesini arkadaşlarıyla paylaşıyor mu?")
+    p2_b = soru_sor("Misafire/Müşteriye karşılık beklemeden güler yüzle hizmet ediyor mu?")
+    p2 = (p2_a + p2_b) / 2
+
+    st.markdown("---")
+
+    # 3. BÖLÜM: SAYGI VE HİYERARŞİ
+    st.subheader("3. Saygı ve Hiyerarşi (Usta-Çırak)")
+    p3_a = soru_sor("Usta öğreticilerine ve şeflerine karşı saygılı mı?")
+    p3_b = soru_sor("Verilen talimatları eksiksiz ve zamanında yerine getiriyor mu?")
+    p3 = (p3_a + p3_b) / 2
+
+    st.markdown("---")
+
+    # 4. BÖLÜM: SABIR VE SEBAT
+    st.subheader("4. Sabır ve Kriz Yönetimi")
+    p4_a = soru_sor("Yoğun iş temposunda veya zor müşteride sakinliğini koruyor mu?")
+    p4_b = soru_sor("Başladığı işi yarım bırakmadan sonuna kadar götürüyor mu?")
+    p4 = (p4_a + p4_b) / 2
+
+    st.markdown("---")
+
+    # SONUÇ HESAPLAMA (100'lük Sistem)
+    genel_ort = (p1 + p2 + p3 + p4) / 4
+
+    # Renkli Sonuç Kutusu
+    if genel_ort >= 85: 
+        st.success(f"🏆 MÜKEMMEL - Usta Adayı (Puan: {genel_ort:.0f})")
+        sonuc_mesaji = "USTA ADAYI (Mukemmel)"
+    elif genel_ort >= 60: 
+        st.warning(f"🔨 GELİŞİYOR - Kalfa Adayı (Puan: {genel_ort:.0f})")
+        sonuc_mesaji = "KALFA ADAYI (Iyi)"
+    else: 
+        st.error(f"🌱 BAŞLANGIÇ - Yamak (Puan: {genel_ort:.0f})")
+        sonuc_mesaji = "YAMAK (Gelisim Gerekli)"
+
+    # PDF OLUŞTURMA
+    yorum = f"Sayin {ad} ({no}), Ahi-AI Degerlendirme Sonucu:\n\n"
+    yorum += f"Genel Ahilik Puani: {genel_ort:.0f} / 100\n"
+    yorum += f"Durustluk: {p1:.0f} - Comertlik: {p2:.0f}\n"
+    yorum += f"Saygi: {p3:.0f} - Sabir: {p4:.0f}\n\n"
+    yorum += f"SONUC: {sonuc_mesaji}\n"
+
+    if st.button("Sonuç Raporunu PDF İndir"):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="AHI-AI DEGERLENDIRME RAPORU", ln=True, align='C')
+        pdf.cell(200, 10, txt="------------------------------------------------", ln=True, align='C')
+        pdf.multi_cell(0, 10, txt=yorum)
         
-    with col_g2:
-        yorum = f"Sayin {ad}, Ahi-AI analizine gore:\n\n"
-        if genel_ort > 8: yorum += "Tebrikler! Usta seviyesindesin.\n"
-        elif genel_ort > 5: yorum += "Gelisim gostermelisin (Kalfa).\n"
-        else: yorum += "Daha cok calismalisin (Yamak).\n"
-        
-        if p5 < 5: yorum += "Teknoloji konusuna egilmelisin.\n"
-        
-        st.info(yorum)
-        
-        dosya = pdf_yap(ad, yorum, radar_ciz(kategoriler, puanlar))
-        
-        # PDF Okuma ve İndirme Butonu
-        with open(dosya, "rb") as f:
-            pdf_data = f.read()
-            st.download_button(
-                label="📥 PDF İndir",
-                data=pdf_data,
-                file_name=dosya,
-                mime="application/pdf"
+        pdf_content = pdf.output(dest='S').encode('latin-1')
+        b64 = base64.b64encode(pdf_content).decode()
+        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Ahi_Rapor_{no}.pdf">📄 PDF Dosyasını İndir</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
-            )
-
-
+else:
+    st.info("👈 Lütfen sol menüden öğrenci bilgilerini giriniz.")
